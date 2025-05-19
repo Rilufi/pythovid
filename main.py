@@ -1,21 +1,30 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import requests
+from io import StringIO
 
-# Criar pastas
+# Criar diretório de saída
 img_dir = Path("imgs")
 img_dir.mkdir(exist_ok=True)
 
-# Baixar dados
+# URL do dataset do Painel COVID BR
 url = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv"
-df = pd.read_csv(url)
+
+# Realizar download com headers
+headers = {
+    "User-Agent": "Mozilla/5.0 (GitHub Actions - COVID Bot)"
+}
+response = requests.get(url, headers=headers)
+
+if response.status_code != 200:
+    raise Exception(f"Erro ao baixar dados: {response.status_code}")
+
+df = pd.read_csv(StringIO(response.text))
 df["date"] = pd.to_datetime(df["date"])
+df = df[["date", "state", "newCases", "newDeaths"]].dropna()
 
-# Filtrar colunas úteis
-df = df[["date", "state", "newCases", "newDeaths"]]
-df = df.dropna()
-
-# Casos e mortes semanais Brasil
+# Casos e mortes semanais - Brasil
 br = df.groupby("date")[["newCases", "newDeaths"]].sum().resample("W").sum()
 
 plt.figure(figsize=(10, 5))
@@ -36,14 +45,13 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_mortes_semanais.png")
 plt.close()
 
-# Por estado
+# Gráficos por estado
 estados = ["SP", "RJ", "RS", "BA", "MG"]
 df_est = df[df["state"].isin(estados)].copy()
 df_est = df_est.groupby(["date", "state"]).sum().reset_index()
 df_est.set_index("date", inplace=True)
 df_est = df_est.groupby("state")[["newCases", "newDeaths"]].resample("W").sum().reset_index()
 
-# Casos semanais por estado
 plt.figure(figsize=(10, 5))
 for estado in estados:
     subset = df_est[df_est["state"] == estado]
@@ -56,7 +64,6 @@ plt.tight_layout()
 plt.savefig(img_dir / "estados_casos.png")
 plt.close()
 
-# Mortes semanais por estado
 plt.figure(figsize=(10, 5))
 for estado in estados:
     subset = df_est[df_est["state"] == estado]
