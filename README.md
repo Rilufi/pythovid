@@ -46,5 +46,5 @@ Você pode também executar manualmente o workflow pelo GitHub.
 
 ---
 
-*Criado por Yuri Abuchaim · [rilufi.github.io](https://rilufi.github.io)*
-*Contato · 📧 [yuri.abuchaim@gmail.com](mailto:yuri.abuchaim@gmail.com)*
+- *Criado por Yuri Abuchaim · [rilufi.github.io](https://rilufi.github.io)*
+- *Contato · 📧 [yuri.abuchaim@gmail.com](mailto:yuri.abuchaim@gmail.com)*
