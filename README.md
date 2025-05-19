@@ -14,8 +14,8 @@ Este projeto gera automaticamente gráficos informativos sobre a pandemia de COV
 
 As imagens são salvas na pasta `imgs/`:
 
-- **Casos semanais acumulados no Brasil** 🇧🇷  
-- **Mortes semanais no Brasil** 💀  
+- **Casos semanais acumulados no Brasil** 
+- **Mortes semanais no Brasil**  
 - **Casos semanais por estado**: SP, RJ, RS, BA, MG  
 - **Mortes semanais por estado**: SP, RJ, RS, BA, MG  
 
