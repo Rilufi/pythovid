@@ -126,6 +126,7 @@ print("Gerando gráfico comparativo anual melhorado (casos)...")
 plt.figure(figsize=(16, 9))
 
 # Plot das linhas
+days_of_year = list(range(1, len(mm7_2024)+1))
 plt.plot(days_of_year, mm7_2024, label='2024', color='#1f77b4', linewidth=2.5, alpha=0.8)
 plt.plot(days_of_year, mm7_2025, label='2025', color='#d62728', linewidth=2.5)
 
