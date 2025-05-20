@@ -4,74 +4,61 @@ from pathlib import Path
 import requests
 from io import StringIO
 
-# Criar diretório de saída
+# Diretórios para salvar os dados e imagens
+data_dir = Path("data")
 img_dir = Path("imgs")
+data_dir.mkdir(exist_ok=True)
 img_dir.mkdir(exist_ok=True)
 
-# URL do dataset do Painel COVID BR
-url = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv"
+# URL do arquivo CSV da OMS
+url = "https://data.who.int/dashboards/covid19/who-covid-19-global-data.csv"
 
-# Realizar download com headers
-headers = {
-    "User-Agent": "Mozilla/5.0 (GitHub Actions - COVID Bot)"
-}
-response = requests.get(url, headers=headers)
+# Nome do arquivo local
+filename = "who-covid-19-global-data.csv"
+filepath = data_dir / filename
 
-if response.status_code != 200:
-    raise Exception(f"Erro ao baixar dados: {response.status_code}")
+# Baixar o arquivo CSV
+response = requests.get(url)
+if response.status_code == 200:
+    with open(filepath, 'wb') as f:
+        f.write(response.content)
+    print(f"Arquivo salvo em: {filepath}")
+else:
+    print(f"Falha ao baixar o arquivo. Status code: {response.status_code}")
+    exit()
 
-df = pd.read_csv(StringIO(response.text))
-df["date"] = pd.to_datetime(df["date"])
-df = df[["date", "state", "newCases", "newDeaths"]].dropna()
+# Carregar os dados
+df = pd.read_csv(filepath)
+df['Date_reported'] = pd.to_datetime(df['Date_reported'])
 
-# Casos e mortes semanais - Brasil
-br = df.groupby("date")[["newCases", "newDeaths"]].sum().resample("W").sum()
+# Filtrar Brasil e dados a partir de 2025
+df_brazil = df[
+    (df['Country'] == 'Brazil') &
+    (df['Date_reported'] >= '2025-01-01')
+]
 
+# Gráfico de casos
 plt.figure(figsize=(10, 5))
-br["newCases"].plot()
-plt.title("Casos semanais de COVID-19 no Brasil")
-plt.ylabel("Casos por semana")
+plt.plot(df_brazil['Date_reported'], df_brazil['New_cases'], marker='o')
+plt.title("Casos diários de COVID-19 no Brasil em 2025")
+plt.xlabel("Data")
+plt.ylabel("Número de casos")
+plt.xticks(rotation=45)
 plt.grid(True)
+plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d/%m'))
 plt.tight_layout()
-plt.savefig(img_dir / "brasil_casos_semanais.png")
+plt.savefig(img_dir / "brasil_casos_diarios.png")
 plt.close()
 
+# Gráfico de mortes
 plt.figure(figsize=(10, 5))
-br["newDeaths"].plot(color="red")
-plt.title("Mortes semanais de COVID-19 no Brasil")
-plt.ylabel("Mortes por semana")
+plt.plot(df_brazil['Date_reported'], df_brazil['New_deaths'], color='red', marker='o')
+plt.title("Mortes diárias de COVID-19 no Brasil em 2025")
+plt.xlabel("Data")
+plt.ylabel("Número de mortes")
+plt.xticks(rotation=45)
 plt.grid(True)
+plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d/%m'))
 plt.tight_layout()
-plt.savefig(img_dir / "brasil_mortes_semanais.png")
-plt.close()
-
-# Gráficos por estado
-estados = ["SP", "RJ", "RS", "BA", "MG"]
-df_est = df[df["state"].isin(estados)].copy()
-df_est = df_est.groupby(["date", "state"]).sum().reset_index()
-df_est.set_index("date", inplace=True)
-df_est = df_est.groupby("state")[["newCases", "newDeaths"]].resample("W").sum().reset_index()
-
-plt.figure(figsize=(10, 5))
-for estado in estados:
-    subset = df_est[df_est["state"] == estado]
-    plt.plot(subset["date"], subset["newCases"], label=estado)
-plt.title("Casos semanais por estado")
-plt.ylabel("Casos por semana")
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig(img_dir / "estados_casos.png")
-plt.close()
-
-plt.figure(figsize=(10, 5))
-for estado in estados:
-    subset = df_est[df_est["state"] == estado]
-    plt.plot(subset["date"], subset["newDeaths"], label=estado)
-plt.title("Mortes semanais por estado")
-plt.ylabel("Mortes por semana")
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig(img_dir / "estados_mortes.png")
+plt.savefig(img_dir / "brasil_mortes_diarios.png")
 plt.close()
