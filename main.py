@@ -119,7 +119,7 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_letalidade_diaria.png", bbox_inches='tight', transparent=True)
 plt.close()
 
-# 4. Gráfico comparativo anual (2024 vs 2025) - VERSÃO CORRIGIDA
+# 4. Gráfico comparativo anual (2024 vs 2025)
 print("Gerando gráfico comparativo anual melhorado...")
 plt.figure(figsize=(16, 8))
 
@@ -182,10 +182,10 @@ plt.text(current_day+2, plt.ylim()[1]*0.85, f'Hoje ({current_day}º dia)',
          color='black', bbox=dict(facecolor='white', alpha=0.8))
 
 # Calcular e mostrar diferenças totais
-total_2024 = df_2024['New_cases'][:comparison_days].sum()
-total_2025 = df_2025_comparison['New_cases'][:comparison_days].sum()
+total_2024 = df_2024['New_cases'].values[:min_days].sum()  # Corrigido para usar min_days
+total_2025 = df_2025_comparison['New_cases'].values[:min_days].sum()  # Corrigido para usar min_days
 difference = total_2025 - total_2024
-percent_diff = (difference / total_2024) * 100
+percent_diff = (difference / total_2024) * 100 if total_2024 != 0 else 0  # Adicionada verificação para divisão por zero
 
 stats_text = (f"Comparativo até dia {current_day}:\n"
               f"2024: {total_2024/1000:.1f}k casos\n"
@@ -208,7 +208,7 @@ plt.savefig(img_dir / "comparativo_2024_2025.png",
            bbox_inches='tight', dpi=300, transparent=True)
 plt.close()
 
-# 5. Gráfico comparativo de mortes
+# 5. Gráfico comparativo de mortes - VERSÃO CORRIGIDA
 print("Gerando gráfico comparativo de óbitos melhorado...")
 plt.figure(figsize=(16, 8))
 
@@ -245,14 +245,14 @@ plt.fill_between(
 
 # Linhas principais
 line_2024_deaths, = plt.plot(
-    df_2024['Day_of_year'][:comparison_days],
-    df_2024['MM7_deaths'][:comparison_days],
+    days_of_year,
+    mm7_deaths_2024,
     label='2024', color='#1f77b4', linewidth=3, alpha=0.7
 )
 
 line_2025_deaths, = plt.plot(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2025_comparison['MM7_deaths'][:comparison_days],
+    days_of_year,
+    mm7_deaths_2025,
     label='2025', color='#d62728', linewidth=3
 )
 
@@ -267,10 +267,10 @@ plt.text(current_day+2, plt.ylim()[1]*0.85, f'Hoje ({current_day}º dia)',
          color='black', bbox=dict(facecolor='white', alpha=0.8))
 
 # Estatísticas
-total_2024_deaths = df_2024['New_deaths'][:comparison_days].sum()
-total_2025_deaths = df_2025_comparison['New_deaths'][:comparison_days].sum()
+total_2024_deaths = df_2024['New_deaths'].values[:min_days].sum()  # Corrigido para usar min_days
+total_2025_deaths = df_2025_comparison['New_deaths'].values[:min_days].sum()  # Corrigido para usar min_days
 death_diff = total_2025_deaths - total_2024_deaths
-death_pct_diff = (death_diff / total_2024_deaths) * 100
+death_pct_diff = (death_diff / total_2024_deaths) * 100 if total_2024_deaths != 0 else 0  # Adicionada verificação para divisão por zero
 
 death_stats = (f"Comparativo até dia {current_day}:\n"
                f"2024: {total_2024_deaths:.0f} óbitos\n"
