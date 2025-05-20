@@ -120,177 +120,78 @@ plt.savefig(img_dir / "brasil_letalidade_diaria.png", bbox_inches='tight', trans
 plt.close()
 
 # 4. Gráfico comparativo anual (2024 vs 2025)
-print("Gerando gráfico comparativo anual melhorado...")
-plt.figure(figsize=(16, 8))
+from matplotlib.ticker import MaxNLocator
 
-# Configurações gerais
-plt.rcParams['font.size'] = 12
-current_year = datetime.now().year
+print("Gerando gráfico comparativo anual melhorado (casos)...")
+plt.figure(figsize=(16, 9))
 
-# Garantir que estamos comparando os mesmos dias do ano
-min_days = min(len(df_2024), len(df_2025_comparison))
-days_of_year = range(1, min_days + 1)
+# Plot das linhas
+plt.plot(days_of_year, mm7_2024, label='2024', color='#1f77b4', linewidth=2.5, alpha=0.8)
+plt.plot(days_of_year, mm7_2025, label='2025', color='#d62728', linewidth=2.5)
 
-# Extrair os valores para comparação
-mm7_2024 = df_2024['MM7_cases'].values[:min_days]
-mm7_2025 = df_2025_comparison['MM7_cases'].values[:min_days]
+# Área entre as curvas
+plt.fill_between(days_of_year, mm7_2024, mm7_2025, 
+                 where=(mm7_2025 > mm7_2024), interpolate=True, 
+                 color='red', alpha=0.15, label='2025 > 2024')
+plt.fill_between(days_of_year, mm7_2024, mm7_2025, 
+                 where=(mm7_2025 < mm7_2024), interpolate=True, 
+                 color='green', alpha=0.15, label='2025 < 2024')
 
-# Criar área entre as curvas para destacar diferenças
-plt.fill_between(
-    days_of_year,
-    mm7_2024,
-    mm7_2025,
-    where=(mm7_2025 > mm7_2024),
-    facecolor='red', alpha=0.2, interpolate=True, label='2025 > 2024'
-)
+# Linha de hoje
+plt.axvline(current_day, color='black', linestyle='--', linewidth=1)
+plt.text(current_day+1, plt.ylim()[1]*0.95, f'{current_day}º dia', 
+         ha='left', va='top', fontsize=10, color='black',
+         bbox=dict(facecolor='white', edgecolor='gray', alpha=0.8))
 
-plt.fill_between(
-    days_of_year,
-    mm7_2024,
-    mm7_2025,
-    where=(mm7_2025 < mm7_2024),
-    facecolor='green', alpha=0.2, interpolate=True, label='2025 < 2024'
-)
+# Texto de estatísticas
+plt.text(0.01, 0.99, stats_text, transform=plt.gca().transAxes,
+         fontsize=11, verticalalignment='top', 
+         bbox=dict(facecolor='white', edgecolor='gray', alpha=0.8))
 
-# Plotar as linhas principais
-line_2024, = plt.plot(
-    days_of_year,
-    mm7_2024,
-    label='2024', color='#1f77b4', linewidth=3, alpha=0.7
-)
-
-line_2025, = plt.plot(
-    days_of_year,
-    mm7_2025,
-    label='2025', color='#d62728', linewidth=3
-)
-
-# Adicionar marcadores mensais
-months = range(1, 13)
-month_names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-month_days = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
-
-for day, name in zip(month_days, month_names):
-    plt.axvline(x=day, color='gray', linestyle=':', alpha=0.3)
-    plt.text(day+2, plt.ylim()[1]*0.95, name, color='gray')
-
-# Linha vertical para data atual
-current_day = datetime.now().timetuple().tm_yday
-current_line = plt.axvline(x=current_day, color='black', linestyle='--', alpha=0.7)
-plt.text(current_day+2, plt.ylim()[1]*0.85, f'Hoje ({current_day}º dia)', 
-         color='black', bbox=dict(facecolor='white', alpha=0.8))
-
-# Calcular e mostrar diferenças totais
-total_2024 = df_2024['New_cases'].values[:min_days].sum()  # Corrigido para usar min_days
-total_2025 = df_2025_comparison['New_cases'].values[:min_days].sum()  # Corrigido para usar min_days
-difference = total_2025 - total_2024
-percent_diff = (difference / total_2024) * 100 if total_2024 != 0 else 0  # Adicionada verificação para divisão por zero
-
-stats_text = (f"Comparativo até dia {current_day}:\n"
-              f"2024: {total_2024/1000:.1f}k casos\n"
-              f"2025: {total_2025/1000:.1f}k casos\n"
-              f"Diferença: {difference/1000:+.1f}k ({percent_diff:+.1f}%)")
-
-plt.text(0.02, 0.98, stats_text, transform=plt.gca().transAxes,
-         verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
-
-# Configurações finais
-plt.title(f"Comparativo Anual de Casos COVID-19 (Média Móvel 7 dias)\nBrasil - {current_year-1} vs {current_year}", 
-          pad=20, fontsize=14, fontweight='bold')
-plt.ylabel("Casos diários (MM7)", labelpad=10)
-plt.xlabel("Dia do ano", labelpad=10)
-plt.legend(handles=[line_2024, line_2025, current_line], loc='upper left')
+# Título e eixos
+plt.title(f"Casos de COVID-19 no Brasil: Média Móvel (7 dias)\nComparativo {current_year-1} vs {current_year}", fontsize=16, weight='bold')
+plt.xlabel("Dia do ano")
+plt.ylabel("Casos diários (MM7)")
+plt.legend()
 plt.grid(True, alpha=0.3)
+plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True, nbins=12))
 
 plt.tight_layout()
-plt.savefig(img_dir / "comparativo_2024_2025.png", 
-           bbox_inches='tight', dpi=300, transparent=True)
+plt.savefig(img_dir / "comparativo_2024_2025.png", bbox_inches='tight', dpi=300, transparent=True)
 plt.close()
 
 # 5. Gráfico comparativo de mortes - VERSÃO CORRIGIDA
 print("Gerando gráfico comparativo de óbitos melhorado...")
-plt.figure(figsize=(16, 8))
+plt.figure(figsize=(16, 9))
 
-# Calcular médias móveis se ainda não existirem
-if 'MM7_deaths' not in df_2024.columns:
-    df_2024['MM7_deaths'] = df_2024['New_deaths'].rolling(7, min_periods=1).mean()
-if 'MM7_deaths' not in df_2025_comparison.columns:
-    df_2025_comparison['MM7_deaths'] = df_2025_comparison['New_deaths'].rolling(7, min_periods=1).mean()
-
-# Garantir que estamos comparando os mesmos dias do ano
-min_days = min(len(df_2024), len(df_2025_comparison))
-days_of_year = range(1, min_days + 1)
-
-# Extrair os valores para comparação
-mm7_deaths_2024 = df_2024['MM7_deaths'].values[:min_days]
-mm7_deaths_2025 = df_2025_comparison['MM7_deaths'].values[:min_days]
+# Plot das linhas
+plt.plot(days_of_year, mm7_deaths_2024, label='2024', color='#1f77b4', linewidth=2.5, alpha=0.8)
+plt.plot(days_of_year, mm7_deaths_2025, label='2025', color='#d62728', linewidth=2.5)
 
 # Área entre as curvas
-plt.fill_between(
-    days_of_year,
-    mm7_deaths_2024,
-    mm7_deaths_2025,
-    where=(mm7_deaths_2025 > mm7_deaths_2024),
-    facecolor='red', alpha=0.2, interpolate=True, label='2025 > 2024'
-)
-
-plt.fill_between(
-    days_of_year,
-    mm7_deaths_2024,
-    mm7_deaths_2025,
-    where=(mm7_deaths_2025 < mm7_deaths_2024),
-    facecolor='green', alpha=0.2, interpolate=True, label='2025 < 2024'
-)
-
-# Linhas principais
-line_2024_deaths, = plt.plot(
-    days_of_year,
-    mm7_deaths_2024,
-    label='2024', color='#1f77b4', linewidth=3, alpha=0.7
-)
-
-line_2025_deaths, = plt.plot(
-    days_of_year,
-    mm7_deaths_2025,
-    label='2025', color='#d62728', linewidth=3
-)
-
-# Marcadores mensais (reutilizando do gráfico anterior)
-for day, name in zip(month_days, month_names):
-    plt.axvline(x=day, color='gray', linestyle=':', alpha=0.3)
-    plt.text(day+2, plt.ylim()[1]*0.95, name, color='gray')
+plt.fill_between(days_of_year, mm7_deaths_2024, mm7_deaths_2025, 
+                 where=(mm7_deaths_2025 > mm7_deaths_2024), interpolate=True, 
+                 color='red', alpha=0.15, label='2025 > 2024')
+plt.fill_between(days_of_year, mm7_deaths_2024, mm7_deaths_2025, 
+                 where=(mm7_deaths_2025 < mm7_deaths_2024), interpolate=True, 
+                 color='green', alpha=0.15, label='2025 < 2024')
 
 # Linha de hoje
-current_line_deaths = plt.axvline(x=current_day, color='black', linestyle='--', alpha=0.7)
-plt.text(current_day+2, plt.ylim()[1]*0.85, f'Hoje ({current_day}º dia)', 
-         color='black', bbox=dict(facecolor='white', alpha=0.8))
+plt.axvline(current_day, color='black', linestyle='--', linewidth=1)
+plt.text(current_day+1, plt.ylim()[1]*0.95, f'{current_day}º dia', 
+         ha='left', va='top', fontsize=10, color='black',
+         bbox=dict(facecolor='white', edgecolor='gray', alpha=0.8))
 
-# Estatísticas
-total_2024_deaths = df_2024['New_deaths'].values[:min_days].sum()  # Corrigido para usar min_days
-total_2025_deaths = df_2025_comparison['New_deaths'].values[:min_days].sum()  # Corrigido para usar min_days
-death_diff = total_2025_deaths - total_2024_deaths
-death_pct_diff = (death_diff / total_2024_deaths) * 100 if total_2024_deaths != 0 else 0  # Adicionada verificação para divisão por zero
-
-death_stats = (f"Comparativo até dia {current_day}:\n"
-               f"2024: {total_2024_deaths:.0f} óbitos\n"
-               f"2025: {total_2025_deaths:.0f} óbitos\n"
-               f"Diferença: {death_diff:+.0f} ({death_pct_diff:+.1f}%)")
-
-plt.text(0.02, 0.98, death_stats, transform=plt.gca().transAxes,
-         verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
-
-# Configurações finais
-plt.title(f"Comparativo Anual de Óbitos COVID-19 (Média Móvel 7 dias)\nBrasil - {current_year-1} vs {current_year}", 
-          pad=20, fontsize=14, fontweight='bold')
-plt.ylabel("Óbitos diários (MM7)", labelpad=10)
-plt.xlabel("Dia do ano", labelpad=10)
-plt.legend(handles=[line_2024_deaths, line_2025_deaths, current_line_deaths], loc='upper left')
+# Título e eixos
+plt.title(f"Óbitos por COVID-19 no Brasil: Média Móvel (7 dias)\nComparativo {current_year-1} vs {current_year}", fontsize=16, weight='bold')
+plt.xlabel("Dia do ano")
+plt.ylabel("Óbitos diários (MM7)")
+plt.legend()
 plt.grid(True, alpha=0.3)
+plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True, nbins=12))
 
 plt.tight_layout()
-plt.savefig(img_dir / "comparativo_mortes_2024_2025.png", 
-           bbox_inches='tight', dpi=300, transparent=True)
+plt.savefig(img_dir / "comparativo_obitos_2024_2025.png", bbox_inches='tight', dpi=300, transparent=True)
 plt.close()
 
 # Salvar dados da última atualização
