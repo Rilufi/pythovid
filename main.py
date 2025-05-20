@@ -119,42 +119,49 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_letalidade_diaria.png", bbox_inches='tight', transparent=True)
 plt.close()
 
-# 4. Gráfico comparativo anual (2024 vs 2025)
+# 4. Gráfico comparativo anual (2024 vs 2025) - VERSÃO CORRIGIDA
 print("Gerando gráfico comparativo anual melhorado...")
 plt.figure(figsize=(16, 8))
 
 # Configurações gerais
 plt.rcParams['font.size'] = 12
 current_year = datetime.now().year
-comparison_days = min(len(df_2024), len(df_2025_comparison))
+
+# Garantir que estamos comparando os mesmos dias do ano
+min_days = min(len(df_2024), len(df_2025_comparison))
+days_of_year = range(1, min_days + 1)
+
+# Extrair os valores para comparação
+mm7_2024 = df_2024['MM7_cases'].values[:min_days]
+mm7_2025 = df_2025_comparison['MM7_cases'].values[:min_days]
 
 # Criar área entre as curvas para destacar diferenças
 plt.fill_between(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2024['MM7_cases'][:comparison_days],
-    df_2025_comparison['MM7_cases'][:comparison_days],
-    where=(df_2025_comparison['MM7_cases'][:comparison_days] > df_2024['MM7_cases'][:comparison_days]),
+    days_of_year,
+    mm7_2024,
+    mm7_2025,
+    where=(mm7_2025 > mm7_2024),
     facecolor='red', alpha=0.2, interpolate=True, label='2025 > 2024'
 )
 
 plt.fill_between(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2024['MM7_cases'][:comparison_days],
-    df_2025_comparison['MM7_cases'][:comparison_days],
-    where=(df_2025_comparison['MM7_cases'][:comparison_days] < df_2024['MM7_cases'][:comparison_days]),
+    days_of_year,
+    mm7_2024,
+    mm7_2025,
+    where=(mm7_2025 < mm7_2024),
     facecolor='green', alpha=0.2, interpolate=True, label='2025 < 2024'
 )
 
 # Plotar as linhas principais
 line_2024, = plt.plot(
-    df_2024['Day_of_year'][:comparison_days],
-    df_2024['MM7_cases'][:comparison_days],
+    days_of_year,
+    mm7_2024,
     label='2024', color='#1f77b4', linewidth=3, alpha=0.7
 )
 
 line_2025, = plt.plot(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2025_comparison['MM7_cases'][:comparison_days],
+    days_of_year,
+    mm7_2025,
     label='2025', color='#d62728', linewidth=3
 )
 
@@ -211,20 +218,28 @@ if 'MM7_deaths' not in df_2024.columns:
 if 'MM7_deaths' not in df_2025_comparison.columns:
     df_2025_comparison['MM7_deaths'] = df_2025_comparison['New_deaths'].rolling(7, min_periods=1).mean()
 
+# Garantir que estamos comparando os mesmos dias do ano
+min_days = min(len(df_2024), len(df_2025_comparison))
+days_of_year = range(1, min_days + 1)
+
+# Extrair os valores para comparação
+mm7_deaths_2024 = df_2024['MM7_deaths'].values[:min_days]
+mm7_deaths_2025 = df_2025_comparison['MM7_deaths'].values[:min_days]
+
 # Área entre as curvas
 plt.fill_between(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2024['MM7_deaths'][:comparison_days],
-    df_2025_comparison['MM7_deaths'][:comparison_days],
-    where=(df_2025_comparison['MM7_deaths'][:comparison_days] > df_2024['MM7_deaths'][:comparison_days]),
+    days_of_year,
+    mm7_deaths_2024,
+    mm7_deaths_2025,
+    where=(mm7_deaths_2025 > mm7_deaths_2024),
     facecolor='red', alpha=0.2, interpolate=True, label='2025 > 2024'
 )
 
 plt.fill_between(
-    df_2025_comparison['Day_of_year'][:comparison_days],
-    df_2024['MM7_deaths'][:comparison_days],
-    df_2025_comparison['MM7_deaths'][:comparison_days],
-    where=(df_2025_comparison['MM7_deaths'][:comparison_days] < df_2024['MM7_deaths'][:comparison_days]),
+    days_of_year,
+    mm7_deaths_2024,
+    mm7_deaths_2025,
+    where=(mm7_deaths_2025 < mm7_deaths_2024),
     facecolor='green', alpha=0.2, interpolate=True, label='2025 < 2024'
 )
 
