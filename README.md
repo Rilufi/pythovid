@@ -1,50 +1,42 @@
-# 📊 Gráficos Atualizados da COVID-19 no Brasil
+# COVID-19 no Brasil (2025)
 
-Este projeto gera automaticamente gráficos informativos sobre a pandemia de COVID-19 no Brasil com dados atualizados diariamente. Ele utiliza como fonte a base pública mantida por [@wcota](https://github.com/wcota/covid19br) com dados por estado brasileiro.
+Este repositório coleta automaticamente os dados diários de COVID-19 no Brasil a partir da base de dados da **OMS (Organização Mundial da Saúde)** e gera dois gráficos atualizados:
 
-## 🧾 Dados Utilizados
+- 📈 Casos diários em 2025  
+- 💀 Mortes diárias em 2025  
 
-- Fonte: [Painel COVID-19 Brasil - GitHub](https://github.com/wcota/covid19br)
-- Dataset: `cases-brazil-states.csv` (acessado via HTTP diretamente, sem salvar localmente)
-- Atualização: diária via GitHub Actions
+Os gráficos são salvos na pasta `imgs/` e atualizados todos os dias automaticamente via [GitHub Actions](https://docs.github.com/actions).
 
----
+## 🔄 Atualização automática
 
-## 📈 Gráficos Gerados
+O workflow `update.yml` é executado todos os dias às 7h UTC para:
 
-As imagens são salvas na pasta `imgs/`:
+1. Baixar os dados mais recentes da OMS.
+2. Filtrar os dados do Brasil em 2025.
+3. Gerar os gráficos atualizados.
 
-- **Casos semanais acumulados no Brasil** 
-- **Mortes semanais no Brasil**  
-- **Casos semanais por estado**: SP, RJ, RS, BA, MG  
-- **Mortes semanais por estado**: SP, RJ, RS, BA, MG  
-
-Visualizações ideais para análise de tendências regionais e acompanhamento histórico recente.
-
----
-
-## ⚙️ Como Executar Localmente
-
-1. Instale os pacotes necessários:
+## 🗂 Estrutura
 
 ```
-bash
-pip install pandas matplotlib requests
+.
+├── data/                       # Dados CSV baixados da OMS
+├── imgs/                       # Gráficos gerados
+├── main.py                     # Script de análise e geração de gráficos
+├── .github/
+│   └── workflows/
+│       └── update.yml          # Workflow que roda automaticamente
+├── README.md
 ```
 
-Execute o script:
-```
+## ▶️ Executando localmente
+
+Para executar manualmente:
+
+```bash
+pip install -r requirements.txt
 python main.py
 ```
 
-As imagens serão salvas na pasta imgs/.
+## 📊 Fonte dos dados
 
-## 🔁 Atualização Automática
-Este projeto possui um workflow do GitHub Actions configurado para rodar todos os dias às 10h UTC, baixando os dados atualizados e recriando os gráficos automaticamente.
-
-Você pode também executar manualmente o workflow pelo GitHub.
-
----
-
-- *Criado por Yuri Abuchaim · [rilufi.github.io](https://rilufi.github.io)*
-- *Contato · 📧 [yuri.abuchaim@gmail.com](mailto:yuri.abuchaim@gmail.com)*
+[OMS COVID-19 Global Data](https://data.who.int/dashboards/covid19/who-covid-19-global-data.csv)
