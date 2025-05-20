@@ -13,7 +13,7 @@ plt.rcParams['savefig.dpi'] = 300
 
 # Diretórios
 data_dir = Path("data")
-img_dir = Path("imgs/current")
+img_dir = Path("imgs")
 data_dir.mkdir(exist_ok=True)
 img_dir.mkdir(parents=True, exist_ok=True)
 
