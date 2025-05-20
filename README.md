@@ -40,3 +40,8 @@ python main.py
 ## 📊 Fonte dos dados
 
 [OMS COVID-19 Global Data](https://data.who.int/dashboards/covid19/who-covid-19-global-data.csv)
+
+---
+
+- *Criado por Yuri Abuchaim · [rilufi.github.io](https://rilufi.github.io)*
+- *Contato · 📧 [yuri.abuchaim@gmail.com](mailto:yuri.abuchaim@gmail.com)*
