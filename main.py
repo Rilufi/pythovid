@@ -23,32 +23,60 @@ filename = "who-covid-19-global-data.csv"
 filepath = data_dir / filename
 
 # Download
-response = requests.get(url)
-if response.status_code == 200:
+print("Baixando dados atualizados da OMS...")
+try:
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+    
     with open(filepath, 'wb') as f:
         f.write(response.content)
-    print(f"Arquivo salvo em: {filepath}")
-else:
-    print(f"Falha ao baixar o arquivo. Status code: {response.status_code}")
+    print(f"Dados salvos em: {filepath}")
+except Exception as e:
+    print(f"Erro ao baixar dados: {str(e)}")
     exit()
 
 # Processamento
+print("Processando dados...")
 df = pd.read_csv(filepath)
 df['Date_reported'] = pd.to_datetime(df['Date_reported'])
 
-# Filtrar Brasil e 2025
-df_brazil = df[(df['Country'] == 'Brazil') & (df['Date_reported'] >= '2025-01-01')].copy()
+# Filtrar apenas dados do Brasil
+df_brazil = df[df['Country'] == 'Brazil'].copy()
 
-# Calcular métricas
-df_brazil['MM7_cases'] = df_brazil['New_cases'].rolling(7).mean()
-df_brazil['MM7_deaths'] = df_brazil['New_deaths'].rolling(7).mean()
-df_brazil['letalidade'] = (df_brazil['New_deaths'] / df_brazil['New_cases']) * 100
+# Dados de 2025 (último ano completo)
+df_2025 = df_brazil[df_brazil['Date_reported'] >= '2025-01-01'].copy()
 
-# Gráfico 1: Casos diários com média móvel
+# Dados de 2024 (ano anterior para comparação)
+df_2024 = df_brazil[
+    (df_brazil['Date_reported'] >= '2024-01-01') & 
+    (df_brazil['Date_reported'] <= '2024-12-31')
+].copy()
+
+# Verificar se há dados suficientes
+if df_2025.empty or df_2024.empty:
+    print("Erro: Dados insuficientes para análise. Verifique o arquivo baixado.")
+    exit()
+
+# Calcular métricas para 2025
+df_2025['MM7_cases'] = df_2025['New_cases'].rolling(7, min_periods=1).mean()
+df_2025['MM7_deaths'] = df_2025['New_deaths'].rolling(7, min_periods=1).mean()
+df_2025['letalidade'] = (df_2025['New_deaths'] / df_2025['New_cases'].replace(0, pd.NA)) * 100
+
+# Calcular métricas para 2024
+df_2024['Day_of_year'] = df_2024['Date_reported'].dt.dayofyear
+df_2024['MM7_cases'] = df_2024['New_cases'].rolling(7, min_periods=1).mean()
+
+# Preparar dados de 2025 para comparação
+df_2025['Day_of_year'] = df_2025['Date_reported'].dt.dayofyear
+current_day_of_year = datetime.now().timetuple().tm_yday
+df_2025_comparison = df_2025[df_2025['Day_of_year'] <= current_day_of_year].copy()
+
+# 1. Gráfico de casos diários com média móvel (2025)
+print("Gerando gráfico de casos diários...")
 plt.figure(figsize=(14, 7))
-plt.plot(df_brazil['Date_reported'], df_brazil['New_cases'], 
+plt.plot(df_2025['Date_reported'], df_2025['New_cases'], 
          color='#1f77b4', alpha=0.3, label='Casos diários')
-plt.plot(df_brazil['Date_reported'], df_brazil['MM7_cases'], 
+plt.plot(df_2025['Date_reported'], df_2025['MM7_cases'], 
          color='#1f77b4', linewidth=3, label='Média móvel 7 dias')
 plt.title("Casos Diários de COVID-19 no Brasil (2025)", pad=20, fontsize=14)
 plt.ylabel("Número de casos", labelpad=10)
@@ -60,11 +88,12 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_casos_diarios_mm7.png", bbox_inches='tight', transparent=True)
 plt.close()
 
-# Gráfico 2: Mortes diárias com média móvel
+# 2. Gráfico de mortes diárias com média móvel (2025)
+print("Gerando gráfico de óbitos diários...")
 plt.figure(figsize=(14, 7))
-plt.plot(df_brazil['Date_reported'], df_brazil['New_deaths'], 
+plt.plot(df_2025['Date_reported'], df_2025['New_deaths'], 
          color='#d62728', alpha=0.3, label='Óbitos diários')
-plt.plot(df_brazil['Date_reported'], df_brazil['MM7_deaths'], 
+plt.plot(df_2025['Date_reported'], df_2025['MM7_deaths'], 
          color='#d62728', linewidth=3, label='Média móvel 7 dias')
 plt.title("Óbitos Diários por COVID-19 no Brasil (2025)", pad=20, fontsize=14)
 plt.ylabel("Número de óbitos", labelpad=10)
@@ -76,9 +105,10 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_mortes_diarias_mm7.png", bbox_inches='tight', transparent=True)
 plt.close()
 
-# Gráfico 3: Taxa de letalidade
+# 3. Gráfico de taxa de letalidade (2025)
+print("Gerando gráfico de letalidade...")
 plt.figure(figsize=(14, 7))
-plt.plot(df_brazil['Date_reported'], df_brazil['letalidade'], 
+plt.plot(df_2025['Date_reported'], df_2025['letalidade'], 
          color='#2ca02c', linewidth=2)
 plt.title("Taxa de Letalidade Diária (%) - 2025", pad=20, fontsize=14)
 plt.ylabel("Porcentagem", labelpad=10)
@@ -89,29 +119,67 @@ plt.tight_layout()
 plt.savefig(img_dir / "brasil_letalidade_diaria.png", bbox_inches='tight', transparent=True)
 plt.close()
 
-# Comparativo com 2024
-df_2024 = df[(df['Country'] == 'Brazil') & 
-             (df['Date_reported'] >= '2024-01-01') & 
-             (df['Date_reported'] <= '2024-12-31')].copy()
-df_2024['Day_of_year'] = df_2024['Date_reported'].dt.dayofyear
-df_2025 = df_brazil.copy()
-df_2025['Day_of_year'] = df_2025['Date_reported'].dt.dayofyear
-
-# Gráfico 4: Comparativo anual
+# 4. Gráfico comparativo anual (2024 vs 2025)
+print("Gerando gráfico comparativo anual...")
 plt.figure(figsize=(14, 7))
-plt.plot(df_2024['Day_of_year'], df_2024['New_cases'].rolling(7).mean(), 
-         label='2024', color='#7f7f7f', linestyle='--')
-plt.plot(df_2025['Day_of_year'], df_2025['New_cases'].rolling(7).mean(), 
-         label='2025', color='#1f77b4')
+plt.plot(df_2024['Day_of_year'], df_2024['MM7_cases'], 
+         label='2024', color='#7f7f7f', linestyle='--', linewidth=2)
+plt.plot(df_2025_comparison['Day_of_year'], df_2025_comparison['MM7_cases'], 
+         label='2025', color='#1f77b4', linewidth=2)
 plt.title("Comparativo Anual: Casos (MM7) - 2024 vs 2025", pad=20, fontsize=14)
 plt.ylabel("Casos (média móvel 7 dias)", labelpad=10)
 plt.xlabel("Dia do ano", labelpad=10)
 plt.legend()
 plt.grid(True)
+
+# Adicionar linha vertical para data atual
+current_day = datetime.now().timetuple().tm_yday
+plt.axvline(x=current_day, color='red', linestyle=':', alpha=0.7)
+plt.text(current_day+5, plt.ylim()[1]*0.9, 'Hoje', color='red')
+
 plt.tight_layout()
 plt.savefig(img_dir / "comparativo_2024_2025.png", bbox_inches='tight', transparent=True)
 plt.close()
 
+# 5. Gráfico adicional: Comparativo de mortes
+print("Gerando gráfico comparativo de óbitos...")
+df_2024['MM7_deaths'] = df_2024['New_deaths'].rolling(7, min_periods=1).mean()
+df_2025_comparison['MM7_deaths'] = df_2025_comparison['New_deaths'].rolling(7, min_periods=1).mean()
+
+plt.figure(figsize=(14, 7))
+plt.plot(df_2024['Day_of_year'], df_2024['MM7_deaths'], 
+         label='2024', color='#7f7f7f', linestyle='--', linewidth=2)
+plt.plot(df_2025_comparison['Day_of_year'], df_2025_comparison['MM7_deaths'], 
+         label='2025', color='#d62728', linewidth=2)
+plt.title("Comparativo Anual: Óbitos (MM7) - 2024 vs 2025", pad=20, fontsize=14)
+plt.ylabel("Óbitos (média móvel 7 dias)", labelpad=10)
+plt.xlabel("Dia do ano", labelpad=10)
+plt.legend()
+plt.grid(True)
+plt.axvline(x=current_day, color='red', linestyle=':', alpha=0.7)
+plt.text(current_day+5, plt.ylim()[1]*0.9, 'Hoje', color='red')
+plt.tight_layout()
+plt.savefig(img_dir / "comparativo_mortes_2024_2025.png", bbox_inches='tight', transparent=True)
+plt.close()
+
 # Salvar dados da última atualização
+print("Salvando metadados...")
 with open(img_dir / "ultima_atualizacao.txt", "w") as f:
     f.write(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+
+# Salvar estatísticas resumidas
+stats = {
+    "total_cases_2024": int(df_2024['New_cases'].sum()),
+    "total_deaths_2024": int(df_2024['New_deaths'].sum()),
+    "total_cases_2025": int(df_2025['New_cases'].sum()),
+    "total_deaths_2025": int(df_2025['New_deaths'].sum()),
+    "lethality_2024": round((df_2024['New_deaths'].sum() / df_2024['New_cases'].sum()) * 100, 2),
+    "lethality_2025": round((df_2025['New_deaths'].sum() / df_2025['New_cases'].sum()) * 100, 2),
+    "update_time": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+}
+
+import json
+with open(img_dir / "stats.json", "w") as f:
+    json.dump(stats, f)
+
+print("Processo concluído com sucesso!")
