@@ -22,7 +22,7 @@ jobs:
       - name: Instalar dependências
         run: |
           pip install --upgrade pip
-          pip install pandas matplotlib requests
+          pip install -r requirements.txt
 
       - name: Executar script principal
         run: python main.py
