@@ -22,7 +22,7 @@ Workflow do GitHub Actions configurado para:
 
 ## 🏃‍♂️ Como Executar Localmente
 ```
-pip install pandas matplotlib requests
+pip install -r requirements.txt
 python main.py
 ```
 
@@ -57,7 +57,7 @@ GitHub Actions workflow configured to:
 
 ## 🏃‍♂️ How to Run Locally
 ```
-pip install pandas matplotlib requests
+pip install -r requirements.txt
 python main.py
 ```
 
